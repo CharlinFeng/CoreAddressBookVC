@@ -120,6 +120,7 @@ NSString* JXSpellFromIndex(int index)
 {
     //如果没有授权则退出
     if (ABAddressBookGetAuthorizationStatus() != kABAuthorizationStatusAuthorized) {
+        
         return;
     }
     

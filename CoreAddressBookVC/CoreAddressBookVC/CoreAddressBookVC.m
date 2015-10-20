@@ -14,6 +14,11 @@
 
 @property (nonatomic,weak) JXPersonInfo *selectedPersonInfo;
 
+@property (nonatomic,assign) BOOL isShowErrorMsg;
+
+@property (nonatomic,assign) BOOL canReadAddressBook;
+
+
 @end
 
 @implementation CoreAddressBookVC
@@ -80,8 +85,11 @@
 {
     [super viewDidLoad];
     
+    
     //基本配置
     [self basicPrepare];
+    
+    if(!self.canReadAddressBook) return;
     
     [self createTableView];
     [self createSearchBar];
@@ -91,10 +99,54 @@
 /** 基本配置 */
 -(void)basicPrepare{
     
+    self.view.backgroundColor = [UIColor whiteColor];
+    
     self.navigationItem.title = @"通讯录";
+    
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"取消" style:UIBarButtonItemStylePlain target:self action:@selector(dismiss)];
+    
+    if(!self.canReadAddressBook) return;
+    
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh target:self action:@selector(refreshAddressBook:)];
 }
+
+
+
+-(void)viewDidLayoutSubviews{
+    
+    [super viewDidLayoutSubviews];
+    
+    if(self.canReadAddressBook) return;
+    
+    if(self.isShowErrorMsg) return;
+    
+    [self showMsgLabel];
+    
+    self.isShowErrorMsg = YES;
+}
+
+
+
+-(void)showMsgLabel{
+    
+    UILabel *msgLabel = [[UILabel alloc] initWithFrame:self.view.bounds];
+    
+    NSMutableAttributedString *strA = [[NSMutableAttributedString alloc] initWithString:@"通讯录禁止访问\n\n\n\n 请打开“设置”-“隐私”-“通讯录”允许程序访问"];
+    
+    [strA addAttribute:NSFontAttributeName value:[UIFont boldSystemFontOfSize:25] range:NSMakeRange(0, 7)];
+    
+    msgLabel.attributedText = strA;
+    
+    msgLabel.backgroundColor = [UIColor whiteColor];
+    
+    msgLabel.textAlignment = NSTextAlignmentCenter;
+    
+    msgLabel.numberOfLines=0;
+    
+    [self.view addSubview:msgLabel];
+}
+
+
 
 -(void)dismiss{
     [self dismissViewControllerAnimated:YES completion:nil];
@@ -122,7 +174,7 @@
     if (tableView==_searchController.searchResultsTableView) {
         return @"";
     }
-    return JXSpellFromIndex(section);
+    return [JXSpellFromIndex(section) uppercaseString];
 }
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
@@ -254,7 +306,7 @@
     
     NSMutableArray *arr = [NSMutableArray array];
     for (int i = 0; i < 27; i++) {
-        [arr addObject:JXSpellFromIndex(i)];
+        [arr addObject:[JXSpellFromIndex(i) uppercaseString]];
     }
     return arr;
 }
@@ -266,5 +318,13 @@
 {
     [self refreshSearchTableView:searchText];
 }
+
+-(BOOL)canReadAddressBook{
+    
+    ABAuthorizationStatus status = ABAddressBookGetAuthorizationStatus();
+    
+    return status != kABAuthorizationStatusDenied;
+}
+
 
 @end
